@@ -1,8 +1,16 @@
+#!/usr/bin/env python
+# coding=utf-8
+
 import sys
 import logging
 import argparse
+import jenkins
+import platform
+import configparser
+import pathlib
+import os
 
-logger = logging.getLogger()
+import Worker
 
 SCC_JENKINS_JOBS_TEST_STANDARD_CONFIG = '''
 <?xml version='1.0' encoding='UTF-8'?>
@@ -78,6 +86,10 @@ SCC_WEILCOME_COPYWRITE = '''
 Welcome to use Haru.
 '''
 
+logger = logging.getLogger()
+config_path = os.getenv("HOME") + "/.config/haru/"
+config_file_name = "config.ini"
+
 class Haru(object):
     
     def __init__(self, args=None, **kwargs):
@@ -88,14 +100,72 @@ class Haru(object):
 
         # setup property
         self.parser = argparse.ArgumentParser(description=SCC_WEILCOME_COPYWRITE)
-        subparser = self.parser.add_subparsers(help='sub-command help')
+        self.config = configparser.ConfigParser()
+        subparser = self.parser.add_subparsers(help='describe')
 
         # setup sub-commands
-        init_action = subparser.add_parser('init', help='Unit Test CI Initialize Help')
-        query_action = subparser.add_parser('search', help='Unit Test CI Query Help')
-        update_action = subparser.add_parser('update', help='Unit Test CI Update Help')
-        delte_action = subparser.add_parser('delete', help='Unit Test CI Delete Help')
+        init_action = subparser.add_parser('init', help='Initialize Unit Test CI Job.')
+        query_action = subparser.add_parser('search', help='Query Unit Test CI Job.')
+        update_action = subparser.add_parser('update', help='Update Unit Test CI Job.')
+        delte_action = subparser.add_parser('delete', help='Delete Unit Test CI Job.')
         
         # start parser
-        self.args = self.parser.parse_args(args)
+        worker = Worker()
+        self.args = self.parser.parse_args(args, namespace=worker)
+        worker.run()
         print(self.args)
+        print(platform.system())
+
+        # load config
+        # self.load_local_config()
+        # self.check_config()
+
+    def check_config(self):
+      # fuck windows
+      if platform.system() == 'Windows':
+        logger.error("sorry,not support Windows yet.")
+        return
+      # basic jenkins config
+      self.guard_jenkins(key='url', message='please type in your jenkins url: ')
+      self.guard_jenkins(key='name', message='please type in your ci user name: ')
+      self.guard_jenkins(key='password', message='please type in your ci password: ')
+      
+    def config_file_path(self):
+      return config_path + config_file_name
+
+    def guard_jenkins(self, key, message):
+      self.config.read(self.config_file_path())
+      try:
+        jenkins_url = self.config["jenkins"][key]
+      except KeyError:
+        value = input(message)
+        config = configparser.ConfigParser()
+        config.read(self.config_file_path())
+        config['jenkins'][key] = value
+        with open(self.config_file_path(), 'w') as configfile:
+          config.write(configfile)
+
+    def prepare_load(self):
+      # create config directory if not exit
+      if not os.path.exists(config_path + config_file_name):
+        os.makedirs(config_path, exist_ok=True)
+        config = configparser.ConfigParser()
+        config["default"] = {}
+        config["jenkins"] = {}
+        with open(config_path + config_file_name, 'w') as configfile:
+          config.write(configfile)
+
+    def load_local_config(self):
+
+      # create config directory if not exit
+      os.makedirs(config_path, exist_ok=True)
+
+      config = configparser.ConfigParser()
+      config["default"] = {}
+      config["jenkins"] = {}
+      
+
+
+      
+
+      
