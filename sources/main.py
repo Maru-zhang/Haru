@@ -4,7 +4,7 @@
 import sys
 import jenkins
 
-from sources.cli.haru import Haru
+from cli.haru import Haru
 
 if __name__ == '__main__':
     argv = sys.argv[1:]

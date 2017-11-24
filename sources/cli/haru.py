@@ -10,7 +10,7 @@ import configparser
 import pathlib
 import os
 
-import Worker
+from cli.worker import Worker
 
 SCC_JENKINS_JOBS_TEST_STANDARD_CONFIG = '''
 <?xml version='1.0' encoding='UTF-8'?>
@@ -90,6 +90,9 @@ logger = logging.getLogger()
 config_path = os.getenv("HOME") + "/.config/haru/"
 config_file_name = "config.ini"
 
+def _default_init(self):
+    print("init")
+
 class Haru(object):
     
     def __init__(self, args=None, **kwargs):
@@ -101,24 +104,25 @@ class Haru(object):
         # setup property
         self.parser = argparse.ArgumentParser(description=SCC_WEILCOME_COPYWRITE)
         self.config = configparser.ConfigParser()
+        self.worker = Worker()
         subparser = self.parser.add_subparsers(help='describe')
 
         # setup sub-commands
         init_action = subparser.add_parser('init', help='Initialize Unit Test CI Job.')
+        init_action.set_defaults(func=self.worker.default_init)
         query_action = subparser.add_parser('search', help='Query Unit Test CI Job.')
+        query_action.set_defaults(func=self.worker.default_query)
         update_action = subparser.add_parser('update', help='Update Unit Test CI Job.')
-        delte_action = subparser.add_parser('delete', help='Delete Unit Test CI Job.')
+        update_action.set_defaults(func=self.worker.default_update)
+        delete_action = subparser.add_parser('delete', help='Delete Unit Test CI Job.')
+        delete_action.set_defaults(func=self.worker.default_delete)
         
         # start parser
-        worker = Worker()
-        self.args = self.parser.parse_args(args, namespace=worker)
-        worker.run()
+        self.args = self.parser.parse_args(args, namespace=self.worker)
+        self.args.func(self.args)
         print(self.args)
         print(platform.system())
-
-        # load config
-        # self.load_local_config()
-        # self.check_config()
+        print(vars(self.args))
 
     def check_config(self):
       # fuck windows

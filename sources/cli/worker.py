@@ -1,11 +1,18 @@
 #!/usr/bin/env python
 # coding=utf-8
 
-from sources.cli.haru import logger
+import sys
 
-class Worker(object):
+class Worker:
 
-    def run(self):
-        
-        if self.init not None:
-            logger.debug("init action ...")
+    def default_init(args):
+        print(sys._getframe().f_code.co_name)
+
+    def default_query(args):
+        print(sys._getframe().f_code.co_name)
+
+    def default_delete(args):
+        print(sys._getframe().f_code.co_name)
+    
+    def default_update(args):
+        print(sys._getframe().f_code.co_name)
