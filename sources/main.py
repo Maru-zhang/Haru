@@ -3,7 +3,6 @@
 
 import sys
 import jenkins
-
 from cli.haru import Haru
 
 if __name__ == '__main__':
