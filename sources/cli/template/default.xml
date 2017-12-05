@@ -17,7 +17,7 @@
     <configVersion>2</configVersion>
     <userRemoteConfigs>
       <hudson.plugins.git.UserRemoteConfig>
-        <url>http://git.souche.com/destiny/DSTAssistant</url>
+        <url>{{ gitremote }}</url>
         <credentialsId>df0a15e9-a200-4075-9954-06bce6b699a7</credentialsId>
       </hudson.plugins.git.UserRemoteConfig>
     </userRemoteConfigs>

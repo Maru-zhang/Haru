@@ -40,6 +40,7 @@ class Haru(object):
         # setup sub-commands
         init_action = subparser.add_parser('init', help='Initialize Unit Test CI Job.')
         init_action.set_defaults(func=self.worker.default_init)
+        init_action.add_argument('--local', help='add local config file')
         query_action = subparser.add_parser('search', help='Query Unit Test CI Job.')
         query_action.set_defaults(func=self.worker.default_query)
         update_action = subparser.add_parser('update', help='Update Unit Test CI Job.')

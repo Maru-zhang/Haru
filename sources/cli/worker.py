@@ -8,6 +8,8 @@ import jenkins
 from jinja2 import Template
 from jinja2 import Environment, FileSystemLoader
 from utils.logger import logger
+from git import Repo
+from git.exc import InvalidGitRepositoryError
 
 # Capture our current directory
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -23,14 +25,27 @@ class Worker:
             jenkinsURL = haru.getJenkinsURL()
             jenkinsName = haru.getJenkinsUserName()
             jenkinsPassword = haru.getJenkinsPassword()
+            try:
+                git_url = Repo(".").remotes.origin.url
+            except InvalidGitRepositoryError as e:
+                git_url = input('没有在当前目录找到Git,请输入项目的远程Git地址: ')
             value = input("请输入单测的target: ")
-            project = input("请输入jenkins项目名称，默认为%s-UnitTest", value)
+            if not value:
+                print("项目名称不能为空")
+                return
+            project = input("请输入jenkins项目名称，默认名称为" + value + "-UnitTest: ")
             if project == '':
                 project = value + "-UnitTest"
-            j2_env = Environment(loader=FileSystemLoader(THIS_DIR), trim_blocks=True)
-            xmlconfig = j2_env.get_template('./template/default.xml').render(workspace=workspace, target=value)
             try:
-                server = jenkins.Jenkins(jenkinsURL)
+                j2_env = Environment(loader=FileSystemLoader(THIS_DIR), trim_blocks=True)
+                xmlconfig = j2_env.get_template('./template/default.xml').render(
+                gitremote=git_url,
+                workspace=workspace, 
+                target=value)
+                server = jenkins.Jenkins(jenkinsURL, username="maru", password="86880362")
+                user = server.get_whoami()
+                version = server.get_version()
+                print('Hello %s from Jenkins %s' % (user['fullName'], version))
                 server.create_job(project, xmlconfig)
                 print("创建项目成功!")
             except Exception as e:
@@ -38,10 +53,12 @@ class Worker:
         else:
             print("There are more than one workspace.")
 
-    def default_query(args):
+    def default_query(self, args=None, haru=None):
         print(sys._getframe().f_code.co_name)
 
-    def default_delete(args):
+    def default_delete(self, args=None, haru=None):
+        server = jenkins.Jenkins("http://jenkins.souche-inc.com/", username="maru", password="86880362")
+        server.delete_job("-UnitTest")
         print(sys._getframe().f_code.co_name)
     
     def default_update(args):

@@ -13,6 +13,9 @@
             "program": "${file}",
             "cwd": "${workspaceRoot}",
             "env": {},
+            "args": [
+                "init"                
+            ],
             "envFile": "${workspaceRoot}/.env",
             "debugOptions": [
                 "WaitOnAbnormalExit",
