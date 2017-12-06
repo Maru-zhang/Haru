@@ -127,12 +127,7 @@ def initjob():
         else:
             print("There are more than one workspace.")
 
-@click.command()
-def dropdb():
-    click.echo('Dropped the database')
-
 cli.add_command(initjob)
-cli.add_command(dropdb)
 
 if __name__ == '__main__':
     cli()
