@@ -37,7 +37,7 @@ class Haru(object):
         self.config.read(self.config_file_path()) 
         return self.config["jenkins"]["url"]
       except Exception as e:
-        print("读取jenkins-url错误!")
+        logger.error("读取jenkins-url错误!")
 
     # 获取自己的jenkins的用户名
     def getJenkinsUserName(self):
@@ -46,7 +46,7 @@ class Haru(object):
         self.config.read(self.config_file_path()) 
         return self.config["jenkins"]["name"]
       except:
-        print("读取jenkins-name错误!")
+        logger.error("读取jenkins-name错误!")
 
     # 获取自己的jenkins的密码
     def getJenkinsPassword(self):
@@ -56,7 +56,7 @@ class Haru(object):
           self.config.read(self.config_file_path())
         return self.config["jenkins"]["password"]
       except:
-        print("读取jenkins-password错误!")
+        logger.error("读取jenkins-password错误!")
 
     def _check_config(self):
       # fuck windows
@@ -91,43 +91,59 @@ def cli():
 
 @click.command()
 def initjob():
-        result = glob.glob(r'*.xcworkspace')
-        if len(result) == 0:
-            print("没有找到xcworkspace文件!")
-        elif len(result) == 1:
-            workspace = result[0]
-            jenkinsURL = haru.getJenkinsURL()
-            jenkinsName = haru.getJenkinsUserName()
-            jenkinsPassword = haru.getJenkinsPassword()
-            try:
-                git_url = Repo(".").remotes.origin.url
-            except InvalidGitRepositoryError as e:
-                git_url = input('没有在当前目录找到Git,请输入项目的远程Git地址: ')
-            value = input("请输入单测的target: ")
-            if not value:
-                print("项目名称不能为空")
-                return
-            project = input("请输入jenkins项目名称，默认名称为" + value + "-UnitTest: ")
-            if project == '':
-                project = value + "-UnitTest"
-            try:
-                j2_env = Environment(loader=FileSystemLoader(THIS_DIR), trim_blocks=True)
-                xmlconfig = j2_env.get_template('./template/default.xml').render(
-                gitremote=git_url,
-                workspace=workspace, 
-                target=value)
-                server = jenkins.Jenkins(jenkinsURL, username=jenkinsName, password=jenkinsPassword)
-                user = server.get_whoami()
-                version = server.get_version()
-                print('Hello %s from Jenkins %s' % (user['fullName'], version))
-                # server.create_job(project, xmlconfig)
-                print("创建项目成功!")
-            except Exception as e:
-                print(e)
-        else:
-            print("There are more than one workspace.")
+    result = glob.glob(r'*.xcworkspace')
+    if len(result) == 0:
+        logger.error("没有找到xcworkspace文件!")
+    elif len(result) == 1:
+        workspace = result[0]
+        jenkinsURL = haru.getJenkinsURL()
+        jenkinsName = haru.getJenkinsUserName()
+        jenkinsPassword = haru.getJenkinsPassword()
+        try:
+            git_url = Repo(".").remotes.origin.url
+        except InvalidGitRepositoryError as e:
+            git_url = input('没有在当前目录找到Git,请输入项目的远程Git地址: ')
+        value = input("请输入单测的target: ")
+        if not value:
+            logger.error("项目名称不能为空")
+            return
+        project = input("请输入jenkins项目名称，默认名称为" + value + "-UnitTest: ")
+        if project == '':
+            project = value + "-UnitTest"
+        try:
+            j2_env = Environment(loader=FileSystemLoader(THIS_DIR), trim_blocks=True)
+            xmlconfig = j2_env.get_template('./template/default.xml').render(
+            gitremote=git_url,
+            workspace=workspace, 
+            target=value,
+            branch="master")
+            server = jenkins.Jenkins(jenkinsURL, username=jenkinsName, password=jenkinsPassword)
+            server.create_job(project, xmlconfig)
+            logger.info("创建项目成功!")
+        except Exception as e:
+            logger.error(e)
+    else:
+        logger.error("There are more than one workspace.")
+
+@click.command()
+@click.argument('jobname')
+def buildjob(jobname):
+    try:
+        branch = click.prompt('请输入你所要构建的分支', type=str)
+        email = click.prompt('请输入构建完成之后所需要通知的邮箱: ', type=str)
+        if branch is None:
+            branch = "master"
+        jenkinsURL = haru.getJenkinsURL()
+        jenkinsName = haru.getJenkinsUserName()
+        jenkinsPassword = haru.getJenkinsPassword()
+        server = jenkins.Jenkins(jenkinsURL, username=jenkinsName, password=jenkinsPassword)
+        server.build_job(jobname, {"branch": branch, "observer": email})
+        click.echo(jobname + '已经开始构建!')
+    except Exception as e:
+      logger.error(e)
 
 cli.add_command(initjob)
+cli.add_command(buildjob)
 
 if __name__ == '__main__':
     cli()
