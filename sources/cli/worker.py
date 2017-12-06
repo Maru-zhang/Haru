@@ -42,11 +42,11 @@ class Worker:
                 gitremote=git_url,
                 workspace=workspace, 
                 target=value)
-                server = jenkins.Jenkins(jenkinsURL, username="maru", password="86880362")
+                server = jenkins.Jenkins(jenkinsURL, username=jenkinsName, password=jenkinsPassword)
                 user = server.get_whoami()
                 version = server.get_version()
                 print('Hello %s from Jenkins %s' % (user['fullName'], version))
-                server.create_job(project, xmlconfig)
+                # server.create_job(project, xmlconfig)
                 print("创建项目成功!")
             except Exception as e:
                 print(e)
@@ -54,7 +54,12 @@ class Worker:
             print("There are more than one workspace.")
 
     def default_query(self, args=None, haru=None):
-        print(sys._getframe().f_code.co_name)
+        name = "弹个车单元测试"
+        server = jenkins.Jenkins("http://jenkins.souche-inc.com/", username="maru", password="86880362")
+        # server.build_job(name)
+        # last_build_number = server.get_job_info(name)['lastCompletedBuild']['number']
+        # build_info = server.get_build_info(name, last_build_number)
+        print(server.get_job_info(name))
 
     def default_delete(self, args=None, haru=None):
         server = jenkins.Jenkins("http://jenkins.souche-inc.com/", username="maru", password="86880362")

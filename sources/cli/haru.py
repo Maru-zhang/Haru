@@ -12,10 +12,6 @@ import os
 from cli.worker import Worker
 from utils.logger import logger
 
-SCC_JENKINS_JOBS_TEST_STANDARD_CONFIG = '''
-
-'''
-
 SCC_WEILCOME_COPYWRITE = '''
 ❤️
 Welcome to use Haru.
@@ -74,7 +70,7 @@ class Haru(object):
     def getJenkinsPassword(self):
       self._check_config()
       try:
-        if self.config.sections["jenkins"] is None:
+        if self.config["jenkins"] is None:
           self.config.read(self.config_file_path())
         return self.config["jenkins"]["password"]
       except:
@@ -104,22 +100,3 @@ class Haru(object):
         config['jenkins'][key] = value
         with open(self.config_file_path(), 'w') as configfile:
           config.write(configfile)
-
-    def prepare_load(self):
-      # create config directory if not exit
-      if not os.path.exists(config_path + config_file_name):
-        os.makedirs(config_path, exist_ok=True)
-        config = configparser.ConfigParser()
-        config["default"] = {}
-        config["jenkins"] = {}
-        with open(config_path + config_file_name, 'w') as configfile:
-          config.write(configfile)
-
-    def load_local_config(self):
-
-      # create config directory if not exit
-      os.makedirs(config_path, exist_ok=True)
-
-      config = configparser.ConfigParser()
-      config["default"] = {}
-      config["jenkins"] = {}

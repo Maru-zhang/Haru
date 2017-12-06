@@ -9,5 +9,5 @@
         "**/*.pyc": {"when": "$(basename).py"},
         "**/__pycache__": true
     },
-    "python.venvPath": "~/.pyenv",
+    "python.venvPath": "~/.pyenv"
 }
