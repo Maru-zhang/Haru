@@ -4,7 +4,6 @@ import os
 import jenkins
 import platform
 import configparser
-import pathlib
 import logging
 from jinja2 import Template
 from jinja2 import Environment, FileSystemLoader
@@ -32,56 +31,56 @@ class Haru(object):
 
     # 获取jenkins的主机地址
     def getJenkinsURL(self):
-      self._check_config()
-      try:
-        self.config.read(self.config_file_path()) 
-        return self.config["jenkins"]["url"]
-      except Exception as e:
-        logger.error("读取jenkins-url错误!")
+        self._check_config()
+        try:
+            self.config.read(self.config_file_path()) 
+            return self.config["jenkins"]["url"]
+        except:
+            logger.error("读取jenkins-url错误!")
 
     # 获取自己的jenkins的用户名
     def getJenkinsUserName(self):
-      self._check_config()
-      try:
-        self.config.read(self.config_file_path()) 
-        return self.config["jenkins"]["name"]
-      except:
-        logger.error("读取jenkins-name错误!")
+        self._check_config()
+        try:
+            self.config.read(self.config_file_path()) 
+            return self.config["jenkins"]["name"]
+        except:
+            logger.error("读取jenkins-name错误!")
 
     # 获取自己的jenkins的密码
     def getJenkinsPassword(self):
-      self._check_config()
-      try:
-        if self.config["jenkins"] is None:
-          self.config.read(self.config_file_path())
-        return self.config["jenkins"]["password"]
-      except:
-        logger.error("读取jenkins-password错误!")
+        self._check_config()
+        try:
+            if self.config["jenkins"] is None:
+                self.config.read(self.config_file_path())
+            return self.config["jenkins"]["password"]
+        except:
+            logger.error("读取jenkins-password错误!")
 
     def _check_config(self):
-      # fuck windows
-      if platform.system() == 'Windows':
-        logger.error("sorry,not support Windows yet.")
-        return
-      # basic jenkins config
-      self.guard_jenkins(key='url', message='please type in your jenkins url: ')
-      self.guard_jenkins(key='name', message='please type in your jenkins user name: ')
-      self.guard_jenkins(key='password', message='please type in your jenkins password: ')
+        # fuck windows
+        if platform.system() == 'Windows':
+            logger.error("sorry,not support Windows yet.")
+            return
+        # basic jenkins config
+        self.guard_jenkins(key='url', message='please type in your jenkins url: ')
+        self.guard_jenkins(key='name', message='please type in your jenkins user name: ')
+        self.guard_jenkins(key='password', message='please type in your jenkins password: ')
       
     def config_file_path(self):
-      return config_path + config_file_name
+        return config_path + config_file_name
 
     def guard_jenkins(self, key, message):
-      self.config.read(self.config_file_path())
-      try:
-        jenkins_url = self.config["jenkins"][key]
-      except KeyError:
-        value = input(message)
-        config = configparser.ConfigParser()
-        config.read(self.config_file_path())
-        config['jenkins'][key] = value
-        with open(self.config_file_path(), 'w') as configfile:
-          config.write(configfile)
+        self.config.read(self.config_file_path())
+        try:
+            self.config["jenkins"][key]
+        except KeyError:
+            value = input(message)
+            config = configparser.ConfigParser()
+            config.read(self.config_file_path())
+            config['jenkins'][key] = value
+            with open(self.config_file_path(), 'w') as configfile:
+                config.write(configfile)
 
 haru = Haru()
 
@@ -133,14 +132,14 @@ def buildjob(jobname):
         email = click.prompt('请输入构建完成之后所需要通知的邮箱: ', type=str)
         if branch is None:
             branch = "master"
-        jenkinsURL = haru.getJenkinsURL()
-        jenkinsName = haru.getJenkinsUserName()
-        jenkinsPassword = haru.getJenkinsPassword()
-        server = jenkins.Jenkins(jenkinsURL, username=jenkinsName, password=jenkinsPassword)
+        jenkins_url = haru.getJenkinsURL()
+        jenkins_name = haru.getJenkinsUserName()
+        jenkins_password = haru.getJenkinsPassword()
+        server = jenkins.Jenkins(jenkins_url, username=jenkins_name, password=jenkins_password)
         server.build_job(jobname, {"branch": branch, "observer": email})
         click.echo(jobname + '已经开始构建!')
     except Exception as e:
-      logger.error(e)
+        logger.error(e)
 
 cli.add_command(initjob)
 cli.add_command(buildjob)
