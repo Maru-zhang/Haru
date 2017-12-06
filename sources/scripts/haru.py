@@ -141,8 +141,23 @@ def buildjob(jobname):
     except Exception as e:
         logger.error(e)
 
+@click.command()
+@click.argument('jobname')
+def deletejob(jobname):
+    try:
+        jenkins_url = haru.getJenkinsURL()
+        jenkins_name = haru.getJenkinsUserName()
+        jenkins_password = haru.getJenkinsPassword()
+        server = jenkins.Jenkins(jenkins_url, username=jenkins_name, password=jenkins_password)
+        server.delete_job(jobname)
+        click.echo(jobname + '已经成功删除!')
+    except Exception as e:
+        logger.error(e)
+      
+
 cli.add_command(initjob)
 cli.add_command(buildjob)
+cli.add_command(deletejob)
 
 if __name__ == '__main__':
     cli()
