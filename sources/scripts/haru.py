@@ -25,38 +25,39 @@ logger = logging.getLogger()
 
 click.echo(SCC_WEILCOME_COPYWRITE)
 
+'''Haru is a primary class for cli.'''
 class Haru(object):
-    
+
     def __init__(self):
         self.config = configparser.ConfigParser()
 
     def server(self):
-        jenkinsURL = haru.getJenkinsURL()
-        jenkinsName = haru.getJenkinsUserName()
-        jenkinsPassword = haru.getJenkinsPassword()
-        server = jenkins.Jenkins(jenkinsURL, username=jenkinsName, password=jenkinsPassword)
+        jenkins_url = self.get_jenkins_url()
+        jenkins_name = self.get_jenkins_name()
+        jenkins_password = self.get_jenkins_password()
+        server = jenkins.Jenkins(jenkins_url, username=jenkins_name, password=jenkins_password)
         return server
 
     # 获取jenkins的主机地址
-    def getJenkinsURL(self):
+    def get_jenkins_url(self):
         self._check_config()
         try:
-            self.config.read(self.config_file_path()) 
+            self.config.read(self.config_file_path())
             return self.config["jenkins"]["url"]
         except:
             logger.error("读取jenkins-url错误!")
 
     # 获取自己的jenkins的用户名
-    def getJenkinsUserName(self):
+    def get_jenkins_name(self):
         self._check_config()
         try:
-            self.config.read(self.config_file_path()) 
+            self.config.read(self.config_file_path())
             return self.config["jenkins"]["name"]
         except:
             logger.error("读取jenkins-name错误!")
 
     # 获取自己的jenkins的密码
-    def getJenkinsPassword(self):
+    def get_jenkins_password(self):
         self._check_config()
         try:
             if self.config["jenkins"] is None:
@@ -90,15 +91,6 @@ class Haru(object):
             with open(self.config_file_path(), 'w') as configfile:
                 config.write(configfile)
 
-def loginable(func):
-    def wrapper(*args, **kw):
-        jenkinsURL = haru.getJenkinsURL()
-        jenkinsName = haru.getJenkinsUserName()
-        jenkinsPassword = haru.getJenkinsPassword()
-        server = jenkins.Jenkins(jenkinsURL, username=jenkinsName, password=jenkinsPassword)
-        return func(*args, **kw)
-    return wrapper
-
 haru = Haru()
 
 @click.group()
@@ -127,7 +119,7 @@ def init():
             j2_env = Environment(loader=FileSystemLoader(THIS_DIR), trim_blocks=True)
             xmlconfig = j2_env.get_template('./template/default.xml').render(
             gitremote=git_url,
-            workspace=workspace, 
+            workspace=workspace,
             target=value,
             branch="master")
             server = haru.server()
