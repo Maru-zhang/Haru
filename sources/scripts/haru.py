@@ -11,8 +11,9 @@ from git import Repo
 from git.exc import InvalidGitRepositoryError
 
 SCC_WEILCOME_COPYWRITE = '''
-❤️
+❤️❤️❤️❤️❤️❤️❤️❤️❤️️❤️❤️❤️️❤️❤️❤️❤️❤️❤️❤️❤️❤️️❤️❤️❤️️
 Welcome to use Haru.
+❤️❤️❤️❤️❤️❤️❤️❤️❤️️❤️❤️❤️️❤️❤️❤️❤️❤️❤️❤️❤️❤️️❤️❤️❤️️
 '''
 # Capture our current directory
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -28,6 +29,13 @@ class Haru(object):
     
     def __init__(self):
         self.config = configparser.ConfigParser()
+
+    def server(self):
+        jenkinsURL = haru.getJenkinsURL()
+        jenkinsName = haru.getJenkinsUserName()
+        jenkinsPassword = haru.getJenkinsPassword()
+        server = jenkins.Jenkins(jenkinsURL, username=jenkinsName, password=jenkinsPassword)
+        return server
 
     # 获取jenkins的主机地址
     def getJenkinsURL(self):
@@ -82,6 +90,15 @@ class Haru(object):
             with open(self.config_file_path(), 'w') as configfile:
                 config.write(configfile)
 
+def loginable(func):
+    def wrapper(*args, **kw):
+        jenkinsURL = haru.getJenkinsURL()
+        jenkinsName = haru.getJenkinsUserName()
+        jenkinsPassword = haru.getJenkinsPassword()
+        server = jenkins.Jenkins(jenkinsURL, username=jenkinsName, password=jenkinsPassword)
+        return func(*args, **kw)
+    return wrapper
+
 haru = Haru()
 
 @click.group()
@@ -89,15 +106,12 @@ def cli():
     pass
 
 @click.command()
-def initjob():
+def init():
     result = glob.glob(r'*.xcworkspace')
     if len(result) == 0:
         logger.error("没有找到xcworkspace文件!")
     elif len(result) == 1:
         workspace = result[0]
-        jenkinsURL = haru.getJenkinsURL()
-        jenkinsName = haru.getJenkinsUserName()
-        jenkinsPassword = haru.getJenkinsPassword()
         try:
             git_url = Repo(".").remotes.origin.url
         except InvalidGitRepositoryError as e:
@@ -116,7 +130,7 @@ def initjob():
             workspace=workspace, 
             target=value,
             branch="master")
-            server = jenkins.Jenkins(jenkinsURL, username=jenkinsName, password=jenkinsPassword)
+            server = haru.server()
             server.create_job(project, xmlconfig)
             logger.info("创建项目成功!")
         except Exception as e:
@@ -126,16 +140,13 @@ def initjob():
 
 @click.command()
 @click.argument('jobname')
-def buildjob(jobname):
+def build(jobname):
     try:
         branch = click.prompt('请输入你所要构建的分支', type=str)
         email = click.prompt('请输入构建完成之后所需要通知的邮箱: ', type=str)
-        if branch is None:
+        if not branch:
             branch = "master"
-        jenkins_url = haru.getJenkinsURL()
-        jenkins_name = haru.getJenkinsUserName()
-        jenkins_password = haru.getJenkinsPassword()
-        server = jenkins.Jenkins(jenkins_url, username=jenkins_name, password=jenkins_password)
+        server = haru.server()
         server.build_job(jobname, {"branch": branch, "observer": email})
         click.echo(jobname + '已经开始构建!')
     except Exception as e:
@@ -143,21 +154,33 @@ def buildjob(jobname):
 
 @click.command()
 @click.argument('jobname')
-def deletejob(jobname):
+def delete(jobname):
     try:
-        jenkins_url = haru.getJenkinsURL()
-        jenkins_name = haru.getJenkinsUserName()
-        jenkins_password = haru.getJenkinsPassword()
-        server = jenkins.Jenkins(jenkins_url, username=jenkins_name, password=jenkins_password)
+        server = haru.server()
         server.delete_job(jobname)
         click.echo(jobname + '已经成功删除!')
     except Exception as e:
         logger.error(e)
+
+@click.command()
+@click.argument('job')
+@click.option('--number', default="", help='构建号码, 默认为最新的构建号码')
+def fetch(job, number):
+    try:
+        server = haru.server()
+        last_build_number = number
+        if not number:
+            last_build_number = server.get_job_info(job)['lastCompletedBuild']['number']
+        console = server.get_build_console_output(job, number=last_build_number)
+        click.echo(console)
+    except Exception as e:
+        click.echo(e)
       
 
-cli.add_command(initjob)
-cli.add_command(buildjob)
-cli.add_command(deletejob)
+cli.add_command(init)
+cli.add_command(build)
+cli.add_command(fetch)
+cli.add_command(delete)
 
 if __name__ == '__main__':
     cli()
